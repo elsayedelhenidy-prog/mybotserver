@@ -76,12 +76,22 @@ def get_status():
     current_time = time.time()
     
     # Update status based on last_seen (offline if not seen in 30 seconds)
+    bots_to_remove = []
     for bot_id, bot in bots.items():
         last_seen = bot.get('last_seen', 0)
-        if current_time - last_seen > 30:
+        if current_time - last_seen > 300:  # Remove if offline for 5+ minutes
+            bots_to_remove.append(bot_id)
+        elif current_time - last_seen > 30:
             bot['status'] = 'offline'
         elif current_time - last_seen > 10:
             bot['status'] = 'idle'
+    
+    # Remove old offline bots
+    for bot_id in bots_to_remove:
+        del bots[bot_id]
+    
+    if bots_to_remove:
+        save_data()
     
     return jsonify({
         'bots': bots,
