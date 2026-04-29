@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ðŸ¤– AdsPower Bot Dashboard</title>
+    <title>🤖 AdsPower Bot Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -289,7 +289,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>ðŸ¤– AdsPower Bot Dashboard</h1>
+        <h1>🤖 AdsPower Bot Dashboard</h1>
         
         <!-- Stats Bar -->
         <div class="stats-bar">
@@ -314,7 +314,7 @@
         <div class="grid">
             <!-- Bots Panel -->
             <div class="panel">
-                <h2>ðŸ“¡ Connected Bots</h2>
+                <h2>📡 Connected Bots</h2>
                 <div class="bot-grid" id="bot-grid">
                     <div class="no-bots">No bots connected yet...</div>
                 </div>
@@ -322,15 +322,15 @@
             
             <!-- Login Credentials Panel -->
             <div class="panel">
-                <h2>ðŸ” Login Credentials</h2>
+                <h2>🔐 Login Credentials</h2>
                 <textarea id="logins-input" placeholder="Enter logins (one per line):&#10;email@guerrillamail.com|password123|recovery@mail.com&#10;email2@guerrillamail.com|pass456|recovery2@mail.com"></textarea>
                 <div class="btn-row">
-                    <button class="btn-primary" onclick="addLogins()">âž• Add Logins</button>
-                    <button class="btn-primary" onclick="sendToAllBots()">ðŸš€ Send to All Bots</button>
-                    <button class="btn-danger" onclick="clearLogins()">ðŸ—‘ï¸ Clear All</button>
+                    <button class="btn-primary" onclick="addLogins()">➕ Add Logins</button>
+                    <button class="btn-primary" onclick="sendToAllBots()">🚀 Send to All Bots</button>
+                    <button class="btn-danger" onclick="clearLogins()">🗑️ Clear All</button>
                 </div>
                 
-                <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 1em;">ðŸ“‹ Login Queue</h3>
+                <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 1em;">📋 Login Queue</h3>
                 <div class="login-queue" id="login-queue">
                     <!-- Login items will be added here -->
                 </div>
@@ -338,7 +338,7 @@
             
             <!-- Logs Panel -->
             <div class="panel logs-panel">
-                <h2>ðŸ“œ Activity Logs</h2>
+                <h2>📜 Activity Logs</h2>
                 <div class="logs" id="logs">
                     <div class="log-entry info">[System] Dashboard started. Waiting for bot connections...</div>
                 </div>
@@ -349,9 +349,9 @@
     </div>
     
     <script>
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ðŸ“Š DASHBOARD JAVASCRIPT
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ═══════════════════════════════════════════════════════════════
+        // 📊 DASHBOARD JAVASCRIPT
+        // ═══════════════════════════════════════════════════════════════
         
         const API_BASE = window.location.origin;
         
@@ -383,7 +383,7 @@
             grid.innerHTML = botIds.map(botId => {
                 const bot = bots[botId];
                 const statusClass = bot.status || 'offline';
-                const loggedIn = bot.adspower_logged_in ? 'âœ…' : 'âŒ';
+                const loggedIn = bot.adspower_logged_in ? '✅' : '❌';
                 
                 return `
                     <div class="bot-card">
