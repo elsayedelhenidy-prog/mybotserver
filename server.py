@@ -239,45 +239,88 @@ def get_otp_from_guerrilla():
         return jsonify({'success': False, 'error': 'Invalid email format'})
     
     email_user = email_parts[0]
+    email_domain = email_parts[1]
     
     try:
         import urllib.request
+        import re
+        import ssl
         
-        # Guerrilla Mail API
-        # Set email address
-        set_url = f"https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user={email_user}"
-        req = urllib.request.Request(set_url, headers={'User-Agent': 'Mozilla/5.0'})
-        resp = urllib.request.urlopen(req, timeout=10)
+        # Create SSL context that doesn't verify (for Cloudflare bypass)
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
         
-        # Check inbox
-        check_url = "https://api.guerrillamail.com/ajax.php?f=check_email&seq=0"
-        req2 = urllib.request.Request(check_url, headers={'User-Agent': 'Mozilla/5.0'})
-        resp2 = urllib.request.urlopen(req2, timeout=10)
-        inbox_data = json.loads(resp2.read().decode('utf-8'))
+        # Better headers to avoid blocking
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.guerrillamail.com/',
+            'Origin': 'https://www.guerrillamail.com'
+        }
+        
+        # Guerrilla Mail API - Set email
+        set_url = f"https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user={email_user}&lang=en&site=guerrillamail.com"
+        req = urllib.request.Request(set_url, headers=headers)
+        
+        try:
+            resp = urllib.request.urlopen(req, timeout=15, context=ctx)
+            set_data = json.loads(resp.read().decode('utf-8'))
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Set email failed: {str(e)}'})
+        
+        time.sleep(1)  # Small delay
+        
+        # Get inbox
+        sid_token = set_data.get('sid_token', '')
+        check_url = f"https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token={sid_token}"
+        req2 = urllib.request.Request(check_url, headers=headers)
+        
+        try:
+            resp2 = urllib.request.urlopen(req2, timeout=15, context=ctx)
+            inbox_data = json.loads(resp2.read().decode('utf-8'))
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Get inbox failed: {str(e)}'})
         
         # Look for OTP in recent emails
         emails = inbox_data.get('list', [])
-        for email_item in emails[:5]:  # Check last 5 emails
-            subject = email_item.get('mail_subject', '').lower()
-            if 'otp' in subject or 'verification' in subject or 'code' in subject or 'adspower' in subject:
+        
+        for email_item in emails[:10]:  # Check last 10 emails
+            subject = (email_item.get('mail_subject', '') or '').lower()
+            mail_from = (email_item.get('mail_from', '') or '').lower()
+            
+            # Check if it's from AdsPower or contains verification keywords
+            if any(kw in subject for kw in ['otp', 'verification', 'code', 'verify', 'adspower', 'confirm']):
                 # Get email body
                 mail_id = email_item.get('mail_id')
-                body_url = f"https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id={mail_id}"
-                req3 = urllib.request.Request(body_url, headers={'User-Agent': 'Mozilla/5.0'})
-                resp3 = urllib.request.urlopen(req3, timeout=10)
-                email_data = json.loads(resp3.read().decode('utf-8'))
+                body_url = f"https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id={mail_id}&sid_token={sid_token}"
+                req3 = urllib.request.Request(body_url, headers=headers)
+                
+                try:
+                    resp3 = urllib.request.urlopen(req3, timeout=15, context=ctx)
+                    email_data = json.loads(resp3.read().decode('utf-8'))
+                except:
+                    continue
                 
                 body = email_data.get('mail_body', '')
                 
-                # Extract OTP (usually 4-6 digits)
-                import re
-                otp_match = re.search(r'\b(\d{4,6})\b', body)
-                if otp_match:
-                    return jsonify({
-                        'success': True,
-                        'otp': otp_match.group(1),
-                        'subject': email_item.get('mail_subject', '')
-                    })
+                # Extract OTP (4-6 digits, standalone)
+                otp_patterns = [
+                    r'(?:code|otp|verification)[:\s]*(\d{4,6})',
+                    r'(\d{4,6})(?:\s*is your)',
+                    r'\b(\d{6})\b',
+                    r'\b(\d{4})\b'
+                ]
+                
+                for pattern in otp_patterns:
+                    otp_match = re.search(pattern, body, re.IGNORECASE)
+                    if otp_match:
+                        return jsonify({
+                            'success': True,
+                            'otp': otp_match.group(1),
+                            'subject': email_item.get('mail_subject', '')
+                        })
         
         return jsonify({'success': False, 'error': 'No OTP found in emails'})
         
